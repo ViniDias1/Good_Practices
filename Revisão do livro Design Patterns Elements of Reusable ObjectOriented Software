@@ -1,0 +1,876 @@
+
+# Revisão do livro Design Patterns: Elements of Reusable Object-Oriented Software
+---
+
+# 🏗️ Padrões Criacionais
+
+## 1. **Singleton**  
+**Objetivo**: Garantir que uma classe tenha apenas uma instância no sistema, e fornecer um ponto de acesso global a ela.
+
+- **Quando usar**:
+  - Quando é necessário exatamente um objeto (ex: gerenciador de configurações, logger, conexão com banco).
+- **Vantagens**:
+  - Acesso controlado à instância, garantindo consistência no estado global.
+  - Reduz o uso de memória desnecessária ao evitar múltiplas instâncias.
+  - Facilita o gerenciamento de recursos compartilhados.
+- **Desvantagens**:
+  - Pode dificultar testes, pois introduz dependências globais que são difíceis de isolar.
+  - Viola o princípio de responsabilidade única, pois gerencia tanto a lógica quanto o ciclo de vida da instância.
+  - Pode levar a problemas de concorrência em ambientes multithread se não for implementado corretamente.
+- **Exemplo**:
+  ```java
+  public class ConfigManager {
+      private static ConfigManager instance;
+
+      private ConfigManager() {}
+
+      public static ConfigManager getInstance() {
+          if (instance == null) {
+              instance = new ConfigManager();
+          }
+          return instance;
+      }
+  }
+  ```
+
+---
+
+## 2. **Factory Method**  
+**Objetivo**: Delegar a criação de objetos para subclasses, promovendo maior flexibilidade.
+
+- **Quando usar**:
+  - Quando a classe não sabe de antemão qual objeto concreto criar.
+  - Para permitir que subclasses decidam qual instância criar.
+- **Vantagens**:
+  - Desacoplamento entre criador e produto, facilitando a manutenção e evolução do código.
+  - Facilita a extensão sem modificar código existente, promovendo o princípio aberto/fechado.
+  - Permite encapsular a lógica de criação em um único local.
+- **Desvantagens**:
+  - Pode acabar gerando muitas subclasses somente para criar objetos, aumentando a complexidade.
+- **Exemplo**:
+  ```java
+  abstract class Dialog {
+      public void renderWindow() {
+          Button okButton = createButton();
+          okButton.render();
+      }
+
+      public abstract Button createButton();
+  }
+
+  class WindowsDialog extends Dialog {
+      public Button createButton() {
+          return new WindowsButton();
+      }
+  }
+  ```
+
+---
+
+## 3. **Abstract Factory**  
+**Objetivo**: Fornecer uma interface para criar **famílias** de objetos relacionados ou dependentes, sem especificar suas classes concretas.
+
+- **Quando usar**:
+  - Quando objetos de diferentes famílias precisam trabalhar juntos.
+  - Para garantir compatibilidade entre produtos de uma mesma família.
+- **Vantagens**:
+  - Promove consistência entre objetos relacionados, evitando incompatibilidades.
+  - Facilita a substituição de famílias de objetos, permitindo mudanças globais no sistema.
+  - Reduz o acoplamento entre o cliente e as classes concretas.
+- **Desvantagens**:
+  - A complexidade pode aumentar à medida que o número de produtos e famílias cresce.
+  - Pode ser excessivo para sistemas simples que não exigem múltiplas famílias de objetos.
+- **Exemplo**:
+  ```java
+  interface GUIFactory {
+      Button createButton();
+      Checkbox createCheckbox();
+  }
+
+  class MacOSFactory implements GUIFactory {
+      public Button createButton() {
+          return new MacButton();
+      }
+
+      public Checkbox createCheckbox() {
+          return new MacCheckbox();
+      }
+  }
+  ```
+
+---
+
+## 4. **Builder**  
+**Objetivo**: Separar a construção de um objeto complexo da sua representação, permitindo reutilizar o processo de construção com diferentes representações.
+
+- **Quando usar**:
+  - Quando a criação de um objeto envolve muitos passos ou combinações.
+  - Quando queremos criar objetos com diferentes configurações.
+- **Vantagens**:
+  - Flexibilidade na criação de objetos complexos, permitindo configurações passo a passo.
+  - Mantém o código de construção limpo e organizado, separando a lógica de construção da lógica de uso.
+  - Facilita a reutilização de código para diferentes representações do mesmo objeto.
+- **Desvantagens**:
+  - Pode ser exagerado para objetos simples, adicionando complexidade desnecessária.
+  - Requer a criação de classes adicionais, como o "builder", aumentando o número de componentes no sistema.
+- **Exemplo**:
+  ```java
+  class CarBuilder {
+      private Car car;
+
+      public CarBuilder() {
+          car = new Car();
+      }
+
+      public CarBuilder setEngine(String engine) {
+          car.setEngine(engine);
+          return this;
+      }
+
+      public CarBuilder setSeats(int number) {
+          car.setSeats(number);
+          return this;
+      }
+
+      public Car build() {
+          return car;
+      }
+  }
+  ```
+
+---
+
+## 5. **Prototype**  
+**Objetivo**: Criar novos objetos clonando uma instância existente, em vez de instanciá-los diretamente.
+
+- **Quando usar**:
+  - Quando a criação de um objeto é cara ou complexa.
+  - Quando se deseja evitar a repetição da configuração de objetos similares.
+- **Vantagens**:
+  - Criação rápida de novos objetos, pois evita a inicialização completa.
+  - Menos acoplamento com classes concretas, promovendo flexibilidade.
+  - Permite criar objetos com estados pré-configurados.
+- **Desvantagens**:
+  - Clonagem profunda pode ser complexa e propensa a erros, especialmente em objetos com referências circulares.
+  - Pode ser difícil garantir que o clone seja completamente independente do original.
+- **Requisitos**:
+  - A classe precisa implementar um método `clone`.
+- **Exemplo**:
+  ```java
+  abstract class Shape implements Cloneable {
+      public Shape clone() throws CloneNotSupportedException {
+          return (Shape) super.clone();
+      }
+  }
+
+  class Circle extends Shape {
+      int radius;
+  }
+
+  // Uso
+  Circle c1 = new Circle();
+  c1.radius = 10;
+  Circle c2 = (Circle) c1.clone(); // clone com os mesmos atributos
+  ```
+
+---
+
+# 🏗️ Padrões Estruturais
+
+## 6. **Adapter**  
+**Objetivo**: Permitir que interfaces incompatíveis trabalhem juntas, convertendo a interface de uma classe para outra esperada pelos clientes.
+
+- **Quando usar**:
+  - Quando deseja reutilizar uma classe existente, mas sua interface é incompatível.
+- **Vantagens**:
+  - Facilita integração com sistemas legados ou bibliotecas externas, promovendo reutilização.
+  - Não exige alterações na classe original, preservando seu encapsulamento.
+  - Promove flexibilidade ao permitir que classes incompatíveis colaborem.
+- **Desvantagens**:
+  - Pode adicionar complexidade ao sistema, especialmente se houver muitos adaptadores.
+  - Pode mascarar problemas de design, dificultando a manutenção a longo prazo.
+- **Exemplo**:
+  ```java
+  class OldPrinter {
+      public void printOld(String text) {
+          System.out.println("Impressão antiga: " + text);
+      }
+  }
+
+  interface Printer {
+      void print(String text);
+  }
+
+  class PrinterAdapter implements Printer {
+      private OldPrinter oldPrinter = new OldPrinter();
+
+      public void print(String text) {
+          oldPrinter.printOld(text);
+      }
+  }
+  ```
+
+---
+
+## 7. **Bridge**  
+**Objetivo**: Separar uma abstração da sua implementação, permitindo que ambas evoluam independentemente.
+
+- **Quando usar**:
+  - Quando deseja evitar a explosão de subclasses por combinação de variações.
+  - Quando quer mudar implementações em tempo de execução.
+- **Vantagens**:
+  - Alta flexibilidade para modificar ou estender abstrações e implementações separadamente.
+  - Reduz o acoplamento entre abstração e implementação, promovendo reutilização.
+  - Facilita a manutenção ao isolar mudanças em uma das partes.
+- **Desvantagens**:
+  - Aumenta o número de classes e a complexidade do design, especialmente em sistemas simples.
+- **Exemplo**:
+  ```java
+  interface Renderer {
+      void renderCircle(float radius);
+  }
+
+  class VectorRenderer implements Renderer {
+      public void renderCircle(float radius) {
+          System.out.println("Renderizando círculo vetor de raio " + radius);
+      }
+  }
+
+  abstract class Shape {
+      protected Renderer renderer;
+      public Shape(Renderer renderer) {
+          this.renderer = renderer;
+      }
+      public abstract void draw();
+  }
+
+  class Circle extends Shape {
+      private float radius;
+
+      public Circle(Renderer renderer, float radius) {
+          super(renderer);
+          this.radius = radius;
+      }
+
+      public void draw() {
+          renderer.renderCircle(radius);
+      }
+  }
+  ```
+
+---
+
+## 8. **Composite**  
+**Objetivo**: Compor objetos em estruturas de árvore para representar hierarquias parte-todo. Permite tratar objetos individuais e composições de forma uniforme.
+
+- **Quando usar**:
+  - Quando há hierarquias de objetos similares (como elementos gráficos).
+- **Vantagens**:
+  - Permite usar a mesma interface para folhas e composições, simplificando o código cliente.
+  - Facilita a adição de novos tipos de componentes sem alterar o código existente.
+  - Promove a reutilização de código ao tratar objetos individuais e composições de forma uniforme.
+- **Desvantagens**:
+  - Pode tornar o design mais complexo e difícil de entender ao lidar com muitos tipos de componentes.
+  - Pode ser difícil garantir a consistência entre os componentes da hierarquia.
+- **Exemplo**:
+  ```java
+  interface Component {
+      void render();
+  }
+
+  class Button implements Component {
+      public void render() {
+          System.out.println("Renderizando botão");
+      }
+  }
+
+  class Panel implements Component {
+      private List<Component> children = new ArrayList<>();
+
+      public void add(Component c) {
+          children.add(c);
+      }
+
+      public void render() {
+          for (Component c : children) {
+              c.render();
+          }
+      }
+  }
+  ```
+
+---
+
+## 9. **Decorator**  
+**Objetivo**: Adicionar responsabilidades a um objeto dinamicamente, como alternativa flexível à herança.
+
+- **Quando usar**:
+  - Quando quer adicionar funcionalidades sem modificar a classe original.
+- **Vantagens**:
+  - Composição de comportamentos em tempo de execução, promovendo flexibilidade.
+  - Evita a explosão de subclasses, pois permite combinar comportamentos dinamicamente.
+  - Segue o princípio aberto/fechado, permitindo extensão sem modificação.
+- **Desvantagens**:
+  - Pode resultar em muitos objetos aninhados, deixando a depuração difícil.
+  - Aumenta a complexidade do código, especialmente se houver muitos decoradores.
+- **Exemplo**:
+  ```java
+  interface Notifier {
+      void send(String message);
+  }
+
+  class EmailNotifier implements Notifier {
+      public void send(String message) {
+          System.out.println("Enviando por e-mail: " + message);
+      }
+  }
+
+  class SMSDecorator implements Notifier {
+      private Notifier wrappee;
+
+      public SMSDecorator(Notifier notifier) {
+          this.wrappee = notifier;
+      }
+
+      public void send(String message) {
+          wrappee.send(message);
+          System.out.println("Enviando por SMS: " + message);
+      }
+  }
+  ```
+
+---
+
+## 10. **Facade**  
+**Objetivo**: Fornecer uma interface simplificada para um conjunto de interfaces em um subsistema.
+
+- **Quando usar**:
+  - Quando há um subsistema complexo que precisa ser usado por partes externas.
+- **Vantagens**:
+  - Reduz a complexidade e o acoplamento entre sistemas, promovendo simplicidade.
+  - Facilita a manutenção ao centralizar a lógica de interação com o subsistema.
+  - Melhora a legibilidade do código cliente ao esconder detalhes de implementação.
+- **Desvantagens**:
+  - Pode se tornar um "Deus objeto" se não for bem projetado, concentrando muita lógica.
+  - Pode mascarar a complexidade do subsistema, dificultando a depuração.
+- **Exemplo**:
+  ```java
+  class AudioSystem {
+      void on() { System.out.println("Som ligado"); }
+  }
+
+  class Projector {
+      void on() { System.out.println("Projetor ligado"); }
+  }
+
+  class HomeTheaterFacade {
+      private AudioSystem audio = new AudioSystem();
+      private Projector projector = new Projector();
+
+      public void watchMovie() {
+          audio.on();
+          projector.on();
+          System.out.println("Assistindo filme...");
+      }
+  }
+  ```
+
+---
+
+## 11. **Flyweight**  
+**Objetivo**: Reduzir o uso de memória compartilhando objetos semelhantes que são usados com frequência.
+
+- **Quando usar**:
+  - Quando há muitos objetos semelhantes que podem ser compartilhados.
+- **Vantagens**:
+  - Redução significativa no uso de memória, especialmente em sistemas com muitos objetos.
+  - Melhora o desempenho ao evitar a criação repetida de objetos semelhantes.
+  - Promove a reutilização de objetos, reduzindo o custo de inicialização.
+- **Desvantagens**:
+  - A complexidade do código pode aumentar, exigindo gerenciamento cuidadoso do estado compartilhado.
+  - Pode ser difícil separar o estado intrínseco (compartilhado) do extrínseco (não compartilhado).
+- **Exemplo**:
+  ```java
+  class TreeType {
+      String name;
+      String color;
+
+      public TreeType(String name, String color) {
+          this.name = name;
+          this.color = color;
+      }
+
+      public void draw(int x, int y) {
+          System.out.println("Desenhando árvore " + name + " na posição " + x + "," + y);
+      }
+  }
+
+  class TreeFactory {
+      static Map<String, TreeType> treeTypes = new HashMap<>();
+
+      public static TreeType getTreeType(String name, String color) {
+          String key = name + color;
+          if (!treeTypes.containsKey(key)) {
+              treeTypes.put(key, new TreeType(name, color));
+          }
+          return treeTypes.get(key);
+      }
+  }
+  ```
+
+---
+
+## 12. **Proxy**  
+**Objetivo**: Fornecer um objeto substituto para controlar o acesso a outro objeto, podendo adicionar funcionalidades como lazy loading, controle de acesso, cache, etc.
+
+- **Quando usar**:
+  - Quando deseja adiar a criação de objetos caros.
+  - Quando precisa controlar o acesso a um recurso.
+- **Vantagens**:
+  - Adiciona camadas de controle sem alterar o objeto real, promovendo flexibilidade.
+  - Pode melhorar o desempenho ao implementar lazy loading ou cache.
+  - Segue o princípio de responsabilidade única ao delegar funcionalidades específicas ao proxy.
+- **Desvantagens**:
+  - Pode introduzir latência e adicionar uma camada extra de abstração.
+  - Aumenta a complexidade do sistema, especialmente se houver muitos proxies.
+- **Tipos comuns de Proxy**:
+  - **Virtual Proxy** – adia criação de objetos caros.
+  - **Protection Proxy** – controla acesso baseado em permissões.
+  - **Remote Proxy** – representa um objeto em outra máquina.
+- **Exemplo**:
+  ```java
+  interface Image {
+      void display();
+  }
+
+  class RealImage implements Image {
+      private String filename;
+
+      public RealImage(String filename) {
+          this.filename = filename;
+          loadFromDisk();
+      }
+
+      private void loadFromDisk() {
+          System.out.println("Carregando " + filename);
+      }
+
+      public void display() {
+          System.out.println("Exibindo " + filename);
+      }
+  }
+
+  class ProxyImage implements Image {
+      private RealImage realImage;
+      private String filename;
+
+      public ProxyImage(String filename) {
+          this.filename = filename;
+      }
+
+      public void display() {
+          if (realImage == null) {
+              realImage = new RealImage(filename);
+          }
+          realImage.display();
+      }
+  }
+  ```
+
+---
+
+# 🤖 Padrões Comportamentais
+
+## 13. **Chain of Responsibility**  
+**Objetivo**: Evitar o acoplamento entre o remetente e o receptor de uma solicitação, passando-a por uma cadeia de objetos até que um deles a trate.
+
+- **Quando usar**:
+  - Quando várias classes podem lidar com uma requisição, mas a ordem pode variar.
+- **Vantagens**:
+  - Flexibilidade na atribuição de responsabilidades.
+  - Redução de acoplamento entre remetente e manipuladores.
+- **Desvantagens**: Difícil garantir que a requisição será tratada.
+- **Exemplo**:
+  ```java
+  abstract class Handler {
+      protected Handler next;
+
+      public void setNext(Handler next) {
+          this.next = next;
+      }
+
+      public abstract void handle(String request);
+  }
+
+  class AuthHandler extends Handler {
+      public void handle(String request) {
+          if (request.equals("auth")) {
+              System.out.println("Autenticado!");
+          } else if (next != null) {
+              next.handle(request);
+          }
+      }
+  }
+  ```
+
+---
+
+## 14. **Command**  
+**Objetivo**: Encapsular uma solicitação como um objeto, permitindo parametrizar clientes com diferentes comandos e suportar operações como desfazer/refazer.
+
+- **Quando usar**:
+  - Para fila de operações, histórico, desfazer/refazer.
+- **Vantagens**:
+  - Desacoplamento entre quem envia e quem executa a ação.
+- **Desvantagens**: Pode levar a uma explosão de classes para comandos simples.
+- **Exemplo**:
+  ```java
+  interface Command {
+      void execute();
+  }
+
+  class Light {
+      void on() {
+          System.out.println("Luz ligada");
+      }
+  }
+
+  class LightOnCommand implements Command {
+      private Light light;
+      public LightOnCommand(Light light) {
+          this.light = light;
+      }
+
+      public void execute() {
+          light.on();
+      }
+  }
+
+  class Remote {
+      private Command command;
+      public void setCommand(Command c) {
+          this.command = c;
+      }
+
+      public void pressButton() {
+          command.execute();
+      }
+  }
+  ```
+
+---
+
+## 15. **Interpreter**  
+**Objetivo**: Definir uma gramática e um interpretador para sentenças dessa linguagem.
+
+- **Quando usar**:
+  - Quando há uma linguagem a ser interpretada (como expressões matemáticas, filtros, comandos).
+- **Vantagens**:
+  - Fácil extensão da linguagem.
+- **Desvantagens**: Pode ser ineficiente para gramáticas complexas e difíceis de manter.
+- **Exemplo**:
+  ```java
+  interface Expression {
+      boolean interpret(String context);
+  }
+
+  class TerminalExpression implements Expression {
+      private String data;
+
+      public TerminalExpression(String data) {
+          this.data = data;
+      }
+
+      public boolean interpret(String context) {
+          return context.contains(data);
+      }
+  }
+
+  class OrExpression implements Expression {
+      private Expression expr1, expr2;
+
+      public OrExpression(Expression e1, Expression e2) {
+          this.expr1 = e1;
+          this.expr2 = e2;
+      }
+
+      public boolean interpret(String context) {
+          return expr1.interpret(context) || expr2.interpret(context);
+      }
+  }
+  ```
+
+---
+
+## 16. **Iterator**  
+**Objetivo**: Fornecer uma maneira de acessar elementos de uma coleção sequencialmente, sem expor sua estrutura interna.
+
+- **Quando usar**:
+  - Para percorrer listas, árvores, coleções em geral.
+- **Vantagens**:
+  - Uniformidade no acesso a diferentes tipos de agregados.
+- **Desvantagens**: Pode ser ineficiente para estruturas complexas como árvores profundas.
+- **Exemplo**:
+  ```java
+  class NameRepository {
+      public String[] names = {"Ana", "Bruno", "Carlos"};
+
+      public Iterator getIterator() {
+          return new NameIterator();
+      }
+
+      private class NameIterator implements Iterator {
+          int index = 0;
+
+          public boolean hasNext() {
+              return index < names.length;
+          }
+
+          public String next() {
+              return names[index++];
+          }
+      }
+  }
+  ```
+
+---
+
+## 17. **Mediator**  
+**Objetivo**: Centralizar a comunicação entre objetos, reduzindo o acoplamento direto entre eles.
+
+- **Quando usar**:
+  - Quando múltiplos objetos se comunicam entre si de forma complexa.
+- **Vantagens**:
+  - Simplifica as interações entre objetos.
+- **Desvantagens**: Mediadores podem se tornar muito complexos e difíceis de manter.
+- **Exemplo**:
+  ```java
+  interface Mediator {
+      void send(String message, Colleague colleague);
+  }
+
+  abstract class Colleague {
+      protected Mediator mediator;
+
+      public Colleague(Mediator m) {
+          this.mediator = m;
+      }
+  }
+
+  class ConcreteMediator implements Mediator {
+      private ColleagueA a;
+      private ColleagueB b;
+
+      public void setColleagues(ColleagueA a, ColleagueB b) {
+          this.a = a;
+          this.b = b;
+      }
+
+      public void send(String message, Colleague sender) {
+          if (sender == a) b.receive(message);
+          else a.receive(message);
+      }
+  }
+  ```
+
+---
+
+## 18. **Memento**  
+**Objetivo**: Capturar e armazenar o estado interno de um objeto para que ele possa ser restaurado posteriormente.
+
+- **Quando usar**:
+  - Para implementar “desfazer” ou checkpoint.
+- **Vantagens**:
+  - Preserva encapsulamento.
+- **Desvantagens**: Pode consumir muita memória se houver muitos estados salvos.
+- **Exemplo**:
+  ```java
+  class Memento {
+      private String state;
+
+      public Memento(String state) {
+          this.state = state;
+      }
+
+      public String getState() {
+          return state;
+      }
+  }
+
+  class Originator {
+      private String state;
+
+      public void setState(String state) {
+          this.state = state;
+      }
+
+      public Memento saveStateToMemento() {
+          return new Memento(state);
+      }
+
+      public void restoreFromMemento(Memento m) {
+          this.state = m.getState();
+      }
+  }
+  ```
+
+---
+
+## 19. **Observer**  
+**Objetivo**: Criar uma dependência um-para-muitos entre objetos, onde todos os dependentes são notificados quando o estado muda.
+
+- **Quando usar**:
+  - Para sistemas reativos, GUIs, eventos.
+- **Vantagens**:
+  - Desacoplamento entre observadores e sujeito.
+- **Desvantagens**: Pode causar notificações em cascata e ordem de atualização inesperada.
+- **Exemplo**:
+  ```java
+  interface Observer {
+      void update(String data);
+  }
+
+  class Subject {
+      private List<Observer> observers = new ArrayList<>();
+
+      public void addObserver(Observer o) {
+          observers.add(o);
+      }
+
+      public void notifyAll(String data) {
+          for (Observer o : observers) {
+              o.update(data);
+          }
+      }
+  }
+  ```
+
+---
+
+## 20. **State**  
+**Objetivo**: Permitir que um objeto altere seu comportamento quando seu estado interno muda.
+
+- **Quando usar**:
+  - Quando o comportamento de um objeto depende do seu estado.
+- **Vantagens**:
+  - Evita grandes condicionais baseadas em estado.
+- **Desvantagens**: Pode aumentar o número de classes e a complexidade do design.
+- **Exemplo**:
+  ```java
+  interface State {
+      void handle();
+  }
+
+  class Context {
+      private State state;
+
+      public void setState(State s) {
+          this.state = s;
+      }
+
+      public void request() {
+          state.handle();
+      }
+  }
+
+  class OnState implements State {
+      public void handle() {
+          System.out.println("Luz está ligada");
+      }
+  }
+  ```
+
+---
+
+## 21. **Strategy**  
+**Objetivo**: Definir uma família de algoritmos, encapsular cada um e torná-los intercambiáveis.
+
+- **Quando usar**:
+  - Quando há variações de um algoritmo.
+- **Vantagens**:
+  - Flexibilidade para mudar comportamento em tempo de execução.
+- **Desvantagens**: Clientes devem conhecer as diferentes estratégias disponíveis.
+- **Exemplo**:
+  ```java
+  interface SortStrategy {
+      void sort(List<Integer> list);
+  }
+
+  class BubbleSort implements SortStrategy {
+      public void sort(List<Integer> list) {
+          System.out.println("Ordenando com Bubble Sort");
+      }
+  }
+
+  class Context {
+      private SortStrategy strategy;
+
+      public void setStrategy(SortStrategy strategy) {
+          this.strategy = strategy;
+      }
+
+      public void sort(List<Integer> list) {
+          strategy.sort(list);
+      }
+  }
+  ```
+
+---
+
+## 22. **Template Method**  
+**Objetivo**: Definir o esqueleto de um algoritmo, deixando alguns passos para subclasses implementarem.
+
+- **Quando usar**:
+  - Quando há um algoritmo fixo, mas com variações em algumas etapas.
+- **Vantagens**:
+  - Reutilização de código base e padronização do fluxo.
+- **Desvantagens**: Reduz a flexibilidade em tempo de execução e pode causar rigidez por herança.
+- **Exemplo**:
+  ```java
+  abstract class Game {
+      public final void play() {
+          initialize();
+          startPlay();
+          endPlay();
+      }
+
+      abstract void initialize();
+      abstract void startPlay();
+      abstract void endPlay();
+  }
+  ```
+
+---
+
+## 23. **Visitor**  
+**Objetivo**: Permitir definir novas operações em uma estrutura de objetos sem mudar suas classes.
+
+- **Quando usar**:
+  - Quando quer realizar operações externas em objetos de estrutura estável.
+- **Vantagens**:
+  - Separação entre dados e operações.
+- **Desvantagens**: Difícil adicionar novos tipos de elementos, pois exige mudar todos os visitantes.
+- **Exemplo**:
+  ```java
+  interface Element {
+      void accept(Visitor v);
+  }
+
+  class Book implements Element {
+      public void accept(Visitor v) {
+          v.visit(this);
+      }
+  }
+
+  interface Visitor {
+      void visit(Book book);
+  }
+
+  class TaxVisitor implements Visitor {
+      public void visit(Book book) {
+          System.out.println("Calculando imposto para livro.");
+      }
+  }
+  ```
+
+---
